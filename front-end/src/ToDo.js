@@ -7,6 +7,7 @@ class ToDo extends Component {
   constructor() {
     super();
     this.state = {
+      validDate: false,
       taskList: []
     };
     this.addNewTask = this.addNewTask.bind(this);
@@ -14,20 +15,29 @@ class ToDo extends Component {
 
   componentDidMount(){
 
-    // TODO: Use promise and make loadInitialTasks pure
+    // console.log("#########componentDidMount state##############")
 
-    // load exisiting tasks...if any
-    let taskArray = this.loadInitialTasks();
-    console.log("#########componentDidMount state##############")
-    console.log(this.state.taskList);
+    this.getTasks().then((taskArray) => {
+      this.setState({taskList: taskArray})
+    })
+    .catch((err) => {
+      console.log(err)
+    });
   };
 
   addNewTask(e){   // e is short for event
-    console.log('in addNewTask FE');
+    // console.log('in addNewTask FE');
+
     e.preventDefault();
     const task = document.getElementById('new-task').value;
-
     const taskDate = document.getElementById('new-task-date').value;
+
+    // using materialize datepicker feature means we could get a blank value....
+    if(taskDate === ''){
+      alert("Materialize Kluge...Invalid Date");
+      this.setState({validDate: false});
+      return;
+    };
 
     axios({
       method: "POST",
@@ -38,40 +48,41 @@ class ToDo extends Component {
       }
     }).then((taskData) => {
       console.log(taskData.data)
-      this.setState({taskList: taskData.data});
+      this.setState({taskList: taskData.data, validDate: true});
     })
     .catch((err) => {
       console.log(err);
     });
   };
 
-  loadInitialTasks(){
-    console.log('in loadInitialTasks FE');
+  getTasks(){
+  console.log('in getTasks FE');
 
-    axios({
-      method: "GET",
-      url: "http://localhost:3000/getTasks",
-      data:[]
-    }).then((taskData) => {
-      this.setState(
-        {taskList: taskData.data}
-      );
-      return(taskData.data);
-    })
-    .catch((err) => {
-      console.log(err);
-      return({});
+  let getTasksPromise =
+    new Promise(function(resolve, reject) {
+      axios({
+        method: "GET",
+        url: "http://localhost:3000/getTasks",
+        data:[]
+      }).then((taskData) => {
+        resolve(taskData.data);
+      })
+      .catch((err) => {
+        console.log(err);
+        reject(err);
+      });
     });
+    return getTasksPromise;
   };
 
 
   render(){
-    console.log("in render..............taskList");
-    console.log(this.state.taskList);
+    // console.log("in render..............taskList");
+    // console.log(this.state.taskList);
 
     let taskArray = this.state.taskList.map((task,i) => {
       return(
-        <tr>
+        <tr key={i}>
           <td>{task.taskName} - {task.taskDate}</td>
           <td><button className="btn red">Delete</button></td>
           <td><button className="btn blue">Edit</button></td>
@@ -85,8 +96,8 @@ class ToDo extends Component {
         <div className="section no-pad-bot" id="index-banner">
           <div className="container">
             <form onSubmit={this.addNewTask} className="add-box">
-              <input type="text" id="new-task" placeholder="New Task" />
-              <input type="date" className="datepicker" id="new-task-date" />
+              <input type="text" required id="new-task" className="input-field" placeholder="New Task" />
+              <input type="date" required className="datepicker" id="new-task-date" />
               <button type="submit" className="btn btn-primary">Add Task</button>
             </form>
             <table className="table table-bordered">

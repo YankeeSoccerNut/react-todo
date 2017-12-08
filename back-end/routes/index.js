@@ -121,9 +121,6 @@ router.post('/addTask',(req, res)=>{
         res.json(results);
       }
     })
-  .catch((error) => {
-    console.log(error);
-    })
   });
 
 });
